@@ -36,6 +36,8 @@ def auto_partition(dev, n_osds, journal_size=10*1024*1024*1024, sector_size=512,
     journal_size_in_sectors = journal_size / sector_size
     for i in range(0, n_osds):
         create_partition_s(dev, 'journal', start, start + journal_size_in_sectors - 1)
+        # Set disk GUID type to Ceph Jorunal for fixing wrong journal permission.
+        subprocess.call('sgdisk -t %s:45B0969E-9B03-4F30-B4C6-B4B80CEFF106 %s' % (i+1, dev), shell=True)
         start = start + journal_size_in_sectors
     if bcache:
         create_partition_s(dev, 'bcache', start, '100%')
