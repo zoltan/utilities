@@ -4,6 +4,7 @@ import re
 import os
 import json
 import subprocess
+import argparse
 import sys
 
 def size(device):
@@ -42,6 +43,25 @@ def auto_partition(dev, n_osds, journal_size=10*1024*1024*1024, sector_size=512,
     if bcache:
         create_partition_s(dev, 'bcache', start, '100%')
 
+def create_equal_partitions(blockdevice, wipe, number_of_partitions):
+    print('creating equal partitions')
+
+def create_journals(blockdevice, wipe, number_of_partitions):
+    if wipe:
+        wipe_disk(blockdevice)
+    auto_partition(blockdevice, number_of_partitions)
+    print('creating journal partitions')
+
 if __name__ == "__main__":
-    wipe_disk(sys.argv[1])
-    auto_partition(sys.argv[1], 12)
+    parser = argparse.ArgumentParser(description='A wrapper around parted for easier operations')
+    action_group = parser.add_mutually_exclusive_group(required=True)
+    action_group.add_argument('-e', '--equal', help='partition the drive into equal partitions', action='store_true')
+    action_group.add_argument('-j', '--journals', help='create a number of fixed size partitions', action='store_true')
+    parser.add_argument('-n', '--number-of-partitions', help='how many partitions to create', required=True)
+    parser.add_argument('--do-not-wipe', help='do not wipe the physical block device', action='store_false')
+    parser.add_argument('-b', '--block-device', help='target block device', required=True)
+    args = parser.parse_args()
+    if args.equal:
+        create_equal_partitions(args.block_device, args.do_not_wipe, args.number_of_partitions)
+    elif args.journals:
+        create_journals(args.block_device, args.do_not_wipe, args.number_of_partitions)
